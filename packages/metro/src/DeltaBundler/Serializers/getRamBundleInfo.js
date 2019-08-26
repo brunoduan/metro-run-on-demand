@@ -75,8 +75,14 @@ async function getRamBundleInfo(
     options.getTransformOptions,
   );
 
+  /*XPENG_BUILD_SPLIT_BUNDLE*/
+  /*
   const startupModules = [];
   const lazyModules = [];
+  */
+  let startupModules = [];
+  let lazyModules = [];
+  /*XPENG_BUILD_SPLIT_BUNDLE*/
 
   ramModules.forEach(module => {
     if (preloadedModules.hasOwnProperty(module.sourcePath)) {
@@ -115,6 +121,30 @@ async function getRamBundleInfo(
       return output;
     },
   );
+
+  /*XPENG_BUILD_SPLIT_BUNDLE*/
+  if (options.splitRamBundle && options.indexedRamBundle) {
+    await _initializeSerializedModuleIds(options);
+
+    startupModules = startupModules.filter(m => {
+      let remain = !_serializedModuleIds.has(m.sourcePath);
+      if (options.removeEntry && m.sourcePath &&
+          m.sourcePath.indexOf(entryPoint) >= 0) {
+        remain = false;
+      }
+      return remain;
+    });
+
+    lazyModules = lazyModules.filter(m => {
+      let remain = !_serializedModuleIds.has(m.sourcePath);
+      if (options.removeEntry && m.sourcePath &&
+          m.sourcePath.indexOf(entryPoint) >= 0) {
+        remain = false;
+      }
+      return remain;
+    });
+  }
+  /*XPENG_BUILD_SPLIT_BUNDLE*/
 
   return {
     getDependencies: (filePath: string) =>
@@ -155,5 +185,44 @@ async function _getRamOptions(
     ramGroups: ramGroups || [],
   };
 }
+
+/*XPENG_BUILD_SPLIT_BUNDLE*/
+const _serializedModuleIds = new Map();
+async function _initializeSerializedModuleIds(options) {
+  const _fs = require('fs');
+  const _path = require('path');
+  const runtimeConfig = require('metro-config/src/xpeng/runtimeConfig');
+  const outputPath = runtimeConfig.getOutputPath();
+  const idsFilename = runtimeConfig.getIdsFilename();
+  const indexShortFilename = runtimeConfig.indexShortFilename;
+
+  if (options.resetModuleId) {
+    runtimeConfig.resetModuleIds();
+    return;
+  }
+
+  if (outputPath == undefined) {
+    return;
+  }
+
+  let lastBundleId = runtimeConfig.getLastBundleId();
+  if (lastBundleId == 0) {
+    return;
+  }
+
+  _fs.readdirSync(idsFilename).forEach(function(filename) {
+    if (indexShortFilename == filename) {
+      return;
+    }
+    const nameId = Number.parseInt(filename);
+    if (nameId <= lastBundleId) {
+      const fullFilename = _path.join(idsFilename, filename);
+      const content = _fs.readFileSync(fullFilename, 'utf8');
+      const idsArr = JSON.parse(content) || [];
+      idsArr.map(i => _serializedModuleIds.set(i.path, i.id));
+    }
+  });
+}
+/*XPENG_BUILD_SPLIT_BUNDLE*/
 
 module.exports = getRamBundleInfo;

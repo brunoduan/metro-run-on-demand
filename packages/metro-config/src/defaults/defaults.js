@@ -56,3 +56,11 @@ exports.providesModuleNodeModules = ['react-native', 'react-native-windows'];
 exports.DEFAULT_METRO_MINIFIER_PATH = 'metro-minify-uglify';
 
 exports.defaultCreateModuleIdFactory = defaultCreateModuleIdFactory;
+
+/*XPENG_BUILD_SPLIT_BUNDLE*/
+const splitRamBundle = require("../xpeng/runtimeConfig").getSplitRamBundle();
+if (splitRamBundle) {
+  exports.defaultCreateModuleIdFactory = require("metro/src/xpeng/lib/createModuleIdFactory")
+      .createModuleIdFactory;
+}
+/*XPENG_BUILD_SPLIT_BUNDLE*/

@@ -211,6 +211,8 @@ class Server {
 
     const entryPoint = path.resolve(this._config.projectRoot, entryFile);
 
+    /*XPENG_BUILD_SPLIT_BUNDLE*/
+    /*
     return await getRamBundleInfo(entryPoint, prepend, graph, {
       processModuleFilter: this._config.serializer.processModuleFilter,
       createModuleId: this._createModuleId,
@@ -227,6 +229,29 @@ class Server {
       sourceMapUrl: serializerOptions.sourceMapUrl,
       inlineSourceMap: serializerOptions.inlineSourceMap,
     });
+    */
+    return await getRamBundleInfo(entryPoint, prepend, graph, {
+      processModuleFilter: this._config.serializer.processModuleFilter,
+      createModuleId: this._createModuleId,
+      dev: transformOptions.dev,
+      excludeSource: serializerOptions.excludeSource,
+      getRunModuleStatement: this._config.serializer.getRunModuleStatement,
+      getTransformOptions: this._config.transformer.getTransformOptions,
+      platform: transformOptions.platform,
+      projectRoot: this._config.projectRoot,
+      runBeforeMainModule: this._config.serializer.getModulesRunBeforeMainModule(
+        path.relative(this._config.projectRoot, entryPoint),
+      ),
+      runModule: serializerOptions.runModule,
+      sourceMapUrl: serializerOptions.sourceMapUrl,
+      inlineSourceMap: serializerOptions.inlineSourceMap,
+      bundleOutput: options.bundleOutput,
+      indexedRamBundle: options.indexedRamBundle,
+      splitRamBundle: options.splitRamBundle,
+      removeEntry: options.removeEntry,
+      resetModuleId: options.resetModuleId
+    });
+    /*XPENG_BUILD_SPLIT_BUNDLE*/
   }
 
   async getAssets(options: BundleOptions): Promise<$ReadOnlyArray<AssetData>> {

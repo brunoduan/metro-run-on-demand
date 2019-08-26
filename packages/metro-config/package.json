@@ -1,11 +1,11 @@
 {
   "name": "metro-config",
-  "version": "0.51.1",
+  "version": "0.51.103",
   "description": "🚇 Config parser for Metro",
   "main": "src/index.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:facebook/metro.git"
+    "url": "ssh://git@gitlab.xiaopeng.local:10022/HybridApp/Metro.git"
   },
   "scripts": {
     "prepare-release": "test -d build && rm -rf src.real && mv src src.real && mv build src",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "cosmiconfig": "^5.0.5",
-    "metro": "0.51.1",
+    "metro": "0.51.103",
     "metro-cache": "0.51.1",
     "metro-core": "0.51.1",
     "pretty-format": "24.0.0-alpha.6"

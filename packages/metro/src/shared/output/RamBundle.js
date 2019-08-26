@@ -41,6 +41,14 @@ function save(
   /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an error
    * found when Flow v0.68 was deployed. To see the error delete this comment
    * and run Flow. */
+
+  /*XPENG_BUILD_SPLIT_BUNDLE*/
+  if (options.indexedRamBundle && options.splitRamBundle) {
+    const _asIndexedFile = require("../../xpeng/shared/output/RamBundle/as-indexed-file").save;
+    return _asIndexedFile(bundle, options, log);
+  }
+  /*XPENG_BUILD_SPLIT_BUNDLE*/
+
   return options.platform === 'android' && !options.indexedRamBundle
     ? asAssets(bundle, options, log)
     : asIndexedFile(bundle, options, log);
