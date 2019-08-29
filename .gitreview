@@ -1,0 +1,8 @@
+[gerrit]
+host=ci.xiaopeng.local
+port=29418
+project=HybridApp/Metro.git
+defaultbranch=develop
+
+
+
