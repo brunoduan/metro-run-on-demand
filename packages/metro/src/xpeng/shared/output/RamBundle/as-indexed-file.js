@@ -50,18 +50,26 @@ function saveAsIndexedFile(bundle, options, log) {
   ).then(() => log("Done writing unbundle output"));
 
   if (options.indexedRamBundle && options.splitRamBundle) {
-    const _writeFile = require('metro/src/shared/output/writeFile');
-    const _path = require('path');
+    const _writeFile = require("metro/src/shared/output/writeFile");
+
+    const _path = require("path");
+
     let runtimeConfig = require("metro-config/src/xpeng/runtimeConfig"),
-        lastBundleId = runtimeConfig.getLastBundleId(),
-        filenameIds = runtimeConfig.getIdsFilename(),
-        indexFilename = runtimeConfig.getIndexFilename();
+      lastBundleId = runtimeConfig.getLastBundleId(),
+      filenameIds = runtimeConfig.getIdsFilename(),
+      indexFilename = runtimeConfig.getIndexFilename();
+
     ++lastBundleId;
+
     _writeFile(indexFilename, lastBundleId, encoding).then(() => {
-      log('Down writing the bundle id: ' + indexFilename);
+      log("Down writing the bundle id: " + indexFilename);
     });
 
-    const curBundleIdFilename = _path.join(filenameIds, lastBundleId.toString());
+    const curBundleIdFilename = _path.join(
+      filenameIds,
+      lastBundleId.toString()
+    );
+
     const allModules = startupModules.concat(lazyModules);
     const moduleIds = allModules.map(m => {
       //console.log("id: " + m.id + " type: " + m.type + " path: " + m.sourcePath);
@@ -70,12 +78,24 @@ function saveAsIndexedFile(bundle, options, log) {
       pair.id = m.id;
       return pair;
     });
-    _writeFile(curBundleIdFilename, JSON.stringify(moduleIds), encoding).then(() => {
-      log('Down writing the ids: ' + curBundleIdFilename);
-    });
+
+    _writeFile(curBundleIdFilename, JSON.stringify(moduleIds), encoding).then(
+      () => {
+        log("Down writing the ids: " + curBundleIdFilename);
+      }
+    );
+
+    if (sourcemapOutput) {
+      const outputDir = _path.dirname(sourcemapOutput);
+      writeModuleSourceMap(startupModules, moduleGroups, sourcemapOutput, log);
+      lazyModules.forEach(module => {
+        const outputName = _path.join(outputDir, module.id + ".js.map");
+        writeModuleSourceMap(module, moduleGroups, outputName, () => {});
+      });
+    }
   }
 
-  if (sourcemapOutput) {
+  if (sourcemapOutput && !(options.indexedRamBundle && options.splitRamBundle)) {
     const sourceMap = buildSourcemapWithMetadata({
       startupModules: startupModules.concat(),
       lazyModules: lazyModules.concat(),
@@ -112,6 +132,16 @@ function writeBuffers(stream, buffers) {
   });
 }
 
+function writeModuleSourceMap(module, moduleGroups, sourcemapOutput, log) {
+  const map = buildSourcemapWithMetadata({
+    startupModules: [].concat(module),
+    lazyModules: [],
+    moduleGroups,
+    fixWrapperOffset: true });
+
+  writeSourceMap(sourcemapOutput, JSON.stringify(map), log);
+}
+
 function nullTerminatedBuffer(contents, encoding) {
   return Buffer.concat([Buffer.from(contents, encoding), nullByteBuffer]);
 }
@@ -144,15 +174,14 @@ function buildModuleTable(startupCode, moduleBuffers, moduleGroups) {
   const maxId = moduleIds.reduce((max, id) => Math.max(max, id));
   const numEntries = maxId - minId + 1;
   const table = Buffer.alloc(entryOffset(numEntries)).fill(0); // num_entries
-
   // minimal module id
-  table.writeUInt32LE(minId, 0);
-  // num_entries
-  table.writeUInt32LE(numEntries, SIZEOF_UINT32);
-  // startup_code_len
-  table.writeUInt32LE(startupCode.length, 2 * SIZEOF_UINT32);
 
-  // entries
+  table.writeUInt32LE(minId, 0); // num_entries
+
+  table.writeUInt32LE(numEntries, SIZEOF_UINT32); // startup_code_len
+
+  table.writeUInt32LE(startupCode.length, 2 * SIZEOF_UINT32); // entries
+
   let codeOffset = startupCode.length;
   moduleBuffers.forEach(_ref => {
     let id = _ref.id,
